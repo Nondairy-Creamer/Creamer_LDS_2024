@@ -16,22 +16,39 @@ import shutil
 
 
 def fit_synthetic(param_name, save_folder):
+    """
+    This function will create a synethic data set from an LDS model with randomized parameters. Then it will train an
+    LDS on the syntheiszed data and reproduce the parameters of the true model
+
+    Parameters
+    ----------
+    param_name : string
+        name of the parameter file in submission_params
+    save_folder : string
+        Path to where the model should be saved
+    """
+
+    # Set up parameters for parallelizing over MPI. You can ignore if running as a single thread
     comm = pkl5.Intracomm(MPI.COMM_WORLD)
     size = comm.Get_size()
     cpu_id = comm.Get_rank()
     is_parallel = size > 1
 
+    # load in all the parameters for this run
     run_params = lu.get_run_params(param_name=param_name)
 
     if cpu_id == 0:
         rng = np.random.default_rng(run_params['random_seed'])
 
-        # define the model, setting specific parameters
+        # define the model, setting specific parameters from run_params
+        # we will use this model to generate the synthetic data
         model_true = Lgssm(run_params['dynamics_dim'], run_params['emissions_dim'], run_params['input_dim'],
                            dynamics_lags=run_params['dynamics_lags'], dynamics_input_lags=run_params['dynamics_input_lags'],
                            emissions_input_lags=run_params['emissions_input_lags'], param_props=run_params['param_props'])
-
+        # randomize the weights
         model_true.randomize_weights(rng=rng)
+        # In the paper, we do not update the emission weights and they are set to the identity
+        # however, if you want to update them, randomize them here
         if model_true.param_props['update']['emissions_weights']:
             emission_weights_values = rng.uniform(size=(model_true.emissions_dim, model_true.dynamics_lags))
             emission_weights_values = emission_weights_values / np.sum(emission_weights_values, axis=1, keepdims=True)
@@ -40,6 +57,7 @@ def fit_synthetic(param_name, save_folder):
         else:
             model_true.emissions_weights_init = np.eye(model_true.emissions_dim, model_true.dynamics_dim_full)
         model_true.emissions_input_weights_init = np.zeros(model_true.emissions_input_weights_init.shape)
+        # set all the parameters to the initialized value. We are not training this model, so init = final
         model_true.set_to_init()
 
         start = time.time()
@@ -61,7 +79,7 @@ def fit_synthetic(param_name, save_folder):
                                        rng=rng)
         print('Time to sample:', time.time() - start, 's')
 
-        # make a new model to fit to the random model
+        # make a new model to fit to the random model. This is hte model we will train on the above data
         model_trained = Lgssm(run_params['dynamics_dim'], run_params['emissions_dim'], run_params['input_dim'],
                               verbose=run_params['verbose'], param_props=run_params['param_props'],
                               dynamics_lags=run_params['dynamics_lags'], dynamics_input_lags=run_params['dynamics_input_lags'],
@@ -92,6 +110,7 @@ def fit_synthetic(param_name, save_folder):
         model_true.log_likelihood = [ll_true_params]
         lu.save_run(save_folder, model_true=model_true)
 
+    # train the model
     run_fitting(run_params, model_trained, data_train, data_test, save_folder, model_true=model_true)
 
 
@@ -491,6 +510,41 @@ def run_fitting(run_params, model, data_train, data_test, save_folder, model_tru
                 emissions_offset_train=None, emissions_offset_test=None,
                 init_mean_train=None, init_mean_test=None,
                 init_cov_train=None, init_cov_test=None, plot_figs=True):
+    """
+    This function train the parameters of the model based on the data in data_train
+
+    Parameters
+    ----------
+    run_params : dict
+        parameters of the model and the run
+    model : Lgssm from ssm_classes
+        Model to be trained
+    data_train : dict
+        data to train the model on. emissions key has time x neurons data
+    data_test : dict
+        data to evaluate the model on
+    save_folder : Path
+        folder to save the trained model
+    model_true : Lgssm from ssm_classes
+        Model to be trained
+    starting_step : integer
+        If the run is continuing a previous training step, this is the step to start on
+    emissions_offset_train : numpy 1d array
+        Parameter of the data (rather than the model) learned during training
+    emissions_offset_test : numpy 1d array
+        Parameter of the data (rather than the model) learned during training
+    init_mean_train : numpy 1d array
+        Parameter of the data (rather than the model) learned during training
+    init_mean_test : numpy 1d array
+        Parameter of the data (rather than the model) learned during training
+    init_cov_train : numpy 1d array
+        Parameter of the data (rather than the model) learned during training
+    init_cov_test : numpy 1d array
+        Parameter of the data (rather than the model) learned during training
+    plot_figs : boolean
+        plot the figures
+    """
+
     comm = pkl5.Intracomm(MPI.COMM_WORLD)
     size = comm.Get_size()
     cpu_id = comm.Get_rank()
@@ -503,6 +557,7 @@ def run_fitting(run_params, model, data_train, data_test, save_folder, model_tru
         memmap_cpu_id = None
 
     if cpu_id == 0:
+        # initialize the offset and initial mean and cov
         if emissions_offset_train is None:
             emissions_offset_train = model.estimate_emissions_offset(data_train['emissions'])
 
