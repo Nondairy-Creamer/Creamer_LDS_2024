@@ -19,6 +19,8 @@ The files in the quick_start_examples folder will show you how to load the model
 
 If you would like to train a model on synthetic data, simply run main.txt. To see the available parameters for fitting and generating synethic data look at submission_params/syn_test.txt
 
+main.txt is there to determine whether to submit to a cluster or on the local machine. To see how the models are actually trained look at the ```fit_synthetic``` function in ```run_inference.py```
+
 ### Fitting experimental data
 To fit a new model on the data from Randi et al 2023
 
