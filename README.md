@@ -21,6 +21,37 @@ If you would like to train a model on synthetic data, simply run main.txt. To se
 
 main.txt is there to determine whether to submit to a cluster or on the local machine. To see how the models are actually trained look at the ```fit_synthetic``` function in ```run_inference.py```
 
+### Model files
+You can see how to load the models in `quick_start_examples/predict_stams.py`
+The models are an instantiation of the ssm class in `ssm_classes.py`
+The class includes:
+
+`dynamics_weights`: "W" - weight between every neuron in the brain.
+
+`dynamics_input_weights`: "H" - effect of the opto stim on the targeted neuron.
+
+`dynamics_cov`: "Q" - covariance of the dynamics noise. Diagonal in the paper.
+
+`dynamics_input_lags`: size of the filters in dynamics_input_weights
+
+`emissions_weights`: set to identity in the paper
+
+`emissions_input_weights`: set to 0 in the paper
+
+`emissions_cov`: "R" - covariance of the emissions noise. Diagonal in the paper.
+
+`emissions_input_lags`: not used in the paper
+
+the parameters above also include their initial values with their name + _init
+
+param_props is a dictionary with properties of the parameters
+
+`mask`: binary mask which determines which values to learn. this is how we specify the connectome constraint
+
+`shape`: any special shape parameters such as diagonal
+
+`update`: whether or not to update this parameter during learning
+
 ### Fitting experimental data
 To fit a new model on the data from Randi et al 2023
 
