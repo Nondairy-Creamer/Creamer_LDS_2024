@@ -34,13 +34,13 @@ The class includes:
 
 `dynamics_input_lags`: size of the filters in dynamics_input_weights
 
-`emissions_weights`: set to identity in the paper
+`emissions_weights`: weights from latents to emissions. set to identity in the paper
 
-`emissions_input_weights`: set to 0 in the paper
+`emissions_input_weights`: weights from inputs to emissions. set to 0 in the paper
 
 `emissions_cov`: "R" - covariance of the emissions noise. Diagonal in the paper.
 
-`emissions_input_lags`: not used in the paper
+`emissions_input_lags`: number of lags in the input weights. not used in the paper
 
 the parameters above also include their initial values with their name + _init
 
