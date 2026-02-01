@@ -182,6 +182,7 @@ def plot_model_params(model, model_true=None, cell_ids_chosen=None):
         A_full_true = model_params_true['trained']['dynamics_weights'][:model.dynamics_dim, :]
         A_true = np.split(A_full_true, model.dynamics_lags, axis=1)
         A_true = [i[np.ix_(neuron_inds_chosen, neuron_inds_chosen)] for i in A_true]
+        print(met.nan_corr(A_true[0], A[0])[0])
         # get rid of the diagonal
         for aa in range(len(A_true)):
             A_true[aa][np.eye(A_true[aa].shape[0], dtype=bool)] = np.nan
@@ -192,7 +193,7 @@ def plot_model_params(model, model_true=None, cell_ids_chosen=None):
         A_true = [None for i in range(len(A))]
 
     for i in range(len(A)):
-        plot_matrix(A[i], A_true[i], labels_x=cell_ids_chosen, labels_y=cell_ids_chosen, abs_max=abs_max, title='dynamics matrix')
+        plot_matrix(A[i], A_true[i], labels_x=cell_ids_chosen, labels_y=cell_ids_chosen, abs_max=abs_max, title='A')
 
     # plot the dynamics weights eigenvalues
     eigvals_trained, eigvects_trained = np.linalg.eig(model_params['trained']['dynamics_weights'])
@@ -233,7 +234,7 @@ def plot_model_params(model, model_true=None, cell_ids_chosen=None):
     else:
         B_true = None
 
-    plot_matrix(B, B_true, labels_y=cell_ids_chosen, title='dynamics inputs (diagonal)')
+    plot_matrix(B, B_true, labels_y=cell_ids_chosen, title='B')
 
     # plot the C matrix
     C_full = model_params['trained']['emissions_weights']
@@ -249,7 +250,7 @@ def plot_model_params(model, model_true=None, cell_ids_chosen=None):
     else:
         C_true = None
 
-    plot_matrix(C, C_true, labels_y=cell_ids_chosen, title='emissions weights')
+    plot_matrix(C, C_true, labels_y=cell_ids_chosen, title='C')
 
     # Plot the Q matrix
     Q = model_params['trained']['dynamics_cov'][:model.dynamics_dim, :model.dynamics_dim]
@@ -261,7 +262,7 @@ def plot_model_params(model, model_true=None, cell_ids_chosen=None):
     else:
         Q_true = None
 
-    plot_matrix(Q, Q_true, labels_x=cell_ids_chosen, labels_y=cell_ids_chosen, title='dynamics covariance')
+    plot_matrix(Q, Q_true, labels_x=cell_ids_chosen, labels_y=cell_ids_chosen, title='Q')
 
     # Plot the R matrix
     R = model_params['trained']['emissions_cov']
@@ -273,7 +274,7 @@ def plot_model_params(model, model_true=None, cell_ids_chosen=None):
     else:
         R_true = None
 
-    plot_matrix(R, R_true, labels_x=cell_ids_chosen, labels_y=cell_ids_chosen, title='emissions covariance')
+    plot_matrix(R, R_true, labels_x=cell_ids_chosen, labels_y=cell_ids_chosen, title='R')
 
     plt.show()
 
@@ -292,7 +293,7 @@ def plot_matrix(param_trained, param_true=None, labels_x=None, labels_y=None, ab
     if param_true is not None:
         plt.subplot(2, 2, 1)
     plt.imshow(param_trained, interpolation='Nearest', cmap=colormap)
-    plt.title('fit weights, ' + title)
+    plt.title('fit weights')
     plt.xlabel('input neurons')
     plt.ylabel('output neurons')
     plt.colorbar()
@@ -582,10 +583,10 @@ def plot_irm(model_weights, measured_irm, model_irm, data_corr, cell_ids, cell_i
 def compare_irm_w_anatomy(model_weights, measured_irm, model_irm, data_corr, cell_ids, cell_ids_chosen):
     chosen_neuron_inds = [cell_ids.index(i) for i in cell_ids_chosen]
 
-    chem_conn, gap_conn, pep_conn = au.load_anatomical_data(cell_ids)
+    chem_conn, gap_conn = au.load_anatomical_data(cell_ids)
 
     # compare each of the weights against measured
-    anatomy_list = [chem_conn, gap_conn, pep_conn]
+    anatomy_list = [chem_conn, gap_conn]
 
     # get everything in magnitudes
     model_weights = [np.abs(i) for i in model_weights]

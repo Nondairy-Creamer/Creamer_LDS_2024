@@ -1,7 +1,8 @@
 from pathlib import Path
+import sys
+sys.path.append(str(Path(__file__).resolve().parents[1]))
 import analysis_utilities as au
 import lgssm_utilities as ssmu
-import tmac.preprocessing as tp
 import scipy.signal as ss
 import metrics as met
 import numpy as np
@@ -9,7 +10,8 @@ import pickle
 import loading_utilities as lu
 import analysis.paper_figures as pf
 
-run_params = lu.get_run_params(param_name='../analysis_params/paper_figures.yml')
+param_path = Path(__file__).resolve().parents[1] / 'analysis_params' / 'paper_figures.yml'
+run_params = lu.get_run_params(param_name=str(param_path))
 
 # this analysis requires 4 models
  # synap: a model constrained to have weights only between neurons that have synapses in the connectome
@@ -22,8 +24,6 @@ model_folders = run_params['model_folders']
 for k in model_folders:
     model_folders[k] = Path(model_folders[k])
 fig_save_path = Path(run_params['fig_save_path'])
-q_path = Path(run_params['q_path'])
-q_alpha = run_params['q_alpha']
 required_num_stim = run_params['required_num_stim']
 sub_pre_stim = run_params['sub_pre_stim']
 window = run_params['window']
@@ -32,7 +32,7 @@ num_obs_sweep_params = run_params['num_obs_sweep_params']
 rng = np.random.default_rng(run_params['random_seed'])
 metric = getattr(met, run_params['metric'])
 filter_tau = run_params['filter_tau']
-num_chosen = run_params['num_cell_ids_chosen']
+# num_chosen = run_params['num_cell_ids_chosen']
 
 # get the models
 models = {}
@@ -131,10 +131,10 @@ for i in range(obs_train.shape[1]):
 
 # interpolate nans in data for viewing
 for di, d in enumerate(data_train['emissions']):
-    data_train['emissions'][di] = tp.interpolate_over_nans(d)[0]
+    data_train['emissions'][di] = lu.interpolate_over_nans(d)[0]
 
 for di, d in enumerate(data_test['emissions']):
-    data_test['emissions'][di] = tp.interpolate_over_nans(d)[0]
+    data_test['emissions'][di] = lu.interpolate_over_nans(d)[0]
 
 # make a causal filter to smooth the data with
 if filter_tau > 0:
@@ -170,7 +170,7 @@ ids_file = open(ids_path, 'rb')
 atlas_ids = pickle.load(ids_file)
 ids_file.close()
 atlas_inds = [atlas_ids.index(i) for i in cell_ids['all']]
-q_in = np.load(str(q_path))[np.ix_(atlas_inds, atlas_inds)]
+# q_in = np.load(str(q_path))[np.ix_(atlas_inds, atlas_inds)]
 
 weights = {'data': {}}
 weights['data']['train'] = {'irms': data_irms_train,
@@ -178,7 +178,7 @@ weights['data']['train'] = {'irms': data_irms_train,
                             'irfs_sem': data_irfs_sem_train,
                             'corr': data_corr_train,
                             'corr_binarized': ((data_corr_train_ci[0] > 0) | (data_corr_train_ci[1] < 0)).astype(float),
-                            'q': (q_in < q_alpha).astype(float),
+                            # 'q': (q_in < q_alpha).astype(float),
                             }
 
 weights['data']['test'] = {'irms': data_irms_test,
@@ -186,7 +186,7 @@ weights['data']['test'] = {'irms': data_irms_test,
                            'irfs_sem': data_irfs_sem_test,
                            'corr': data_corr_test,
                            'corr_binarized': ((data_corr_test_ci[0] > 0) | (data_corr_test_ci[1] < 0)).astype(float),
-                           'q': (q_in < q_alpha).astype(float),
+                        #    'q': (q_in < q_alpha).astype(float),
                            }
 
 # get anatomical data
@@ -319,6 +319,10 @@ for i in range(target_n - 1):
 cell_ids['chosen'] = top_cells
 
 ### Exploration
+
+# pf.compare_eig_spec(models)
+
+
 # Figure 1
 # pf.plot_irms(weights, cell_ids, fig_save_path=fig_save_path)
 # pf.plot_irms(weights, cell_ids, use_chosen_ids=False, fig_save_path=fig_save_path)
@@ -344,7 +348,7 @@ cell_ids['chosen'] = top_cells
 # pf.irm_vs_dirm(weights_masked, masks, cell_ids)
 
 # Figure 3
-# pf.predict_chem_synapse_sign(weights_masked, masks, cell_ids, metric=metric, rng=rng, fig_save_path=fig_save_path)
+# pf.predict_chem_synapse_sign(weights, masks, cell_ids, metric=metric, rng=rng, fig_save_path=fig_save_path)
 # pf.predict_gap_synapse_sign(weights_masked, masks, metric=metric, rng=rng, fig_save_path=fig_save_path)
 # pf.unconstrained_vs_constrained_model(weights_masked, fig_save_path=fig_save_path/'fig_3')
 # pf.uncon_vs_synap(models, fig_save_path=fig_save_path/'fig_3')
@@ -384,12 +388,13 @@ pairs = np.array([['RMDDR', 'RMDDL'],
 
 # Figure 3
 # pf.plot_irms(weights, cell_ids, num_neurons=20, fig_save_path=fig_save_path/'fig_3')
-# pf.compare_model_irms(weights, masks, 'irms', fig_save_path=fig_save_path/'fig_3')
-# pf.compare_model_irms(weights, masks, 'corr', fig_save_path=fig_save_path/'fig_3')
+pf.compare_model_irms(weights, masks, 'irms', cell_ids=cell_ids['all'], fig_save_path=fig_save_path/'fig_3')
+pf.compare_model_irms(weights, masks, 'corr', cell_ids=cell_ids['all'], fig_save_path=fig_save_path/'fig_3')
+# pf.connected_unconnected_irms(weights, masks, 'irms', cell_ids=cell_ids['all'], fig_save_path=fig_save_path/'fig_s3')
 
 # Figure 4
-pf.plot_missing_neuron(models, data_test, posterior_dicts['synap'], post_save_path=(saved_run_folder / model_folders['synap'] / 'posterior_test.pkl'),
-                       sample_rate=sample_rate, fig_save_path=fig_save_path/'fig_4')
+# pf.plot_missing_neuron(models, data_test, posterior_dicts['synap'], post_save_path=(saved_run_folder / model_folders['synap'] / 'posterior_test.pkl'),
+#                        sample_rate=sample_rate, fig_save_path=fig_save_path/'fig_4')
 
 
 # supplemental
@@ -399,6 +404,3 @@ pf.plot_missing_neuron(models, data_test, posterior_dicts['synap'], post_save_pa
 
 # fig_s3
 # pf.plot_irms(weights, cell_ids, num_neurons=None, fig_save_path=fig_save_path/'fig_s3')
-
-# fig_s4
-# pf.weight_prediction_direct_vs_poly(weights_masked, masks, cell_ids, weight_name='irms', fig_save_path=fig_save_path/'fig_s4')
