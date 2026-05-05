@@ -6,7 +6,7 @@ Codebase for fitting and analyzing dynamical models from the paper
 # Installation:
 Clone the project
 
-```git clone https://github.com/Nondairy-Creamer/Creamer_LDS_2024```
+```git clone https://github.com/Nondairy-Creamer/Creamer_LDS_2026```
 
 Set up your python environment with pip. Within that environment run
 

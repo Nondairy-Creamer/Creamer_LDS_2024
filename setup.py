@@ -5,7 +5,7 @@ DESCRIPTION = 'Companion code for https://doi.org/10.1101/2024.09.22.614271'
 
 # Setting up
 setup(
-    name="Creamer_LDS_2024",
+    name="Creamer_LDS_2026",
     version=VERSION,
     author="Matthew S. Creamer",
     author_email="matthew.s.creamer@gmail.com",
