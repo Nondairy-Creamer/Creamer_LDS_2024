@@ -2,7 +2,6 @@ import numpy as np
 from pathlib import Path
 import yaml
 import pickle
-# import tmac.preprocessing as tp
 import analysis_utilities as au
 import warnings
 import os
@@ -17,6 +16,12 @@ def get_run_params(param_name):
 
     with open(param_name, 'r') as file:
         params = yaml.safe_load(file)
+
+    if 'hold_out_start' not in params:
+        params['hold_out_start'] = 0
+
+    if 'anatomy_combine_style' not in params:
+        params['anatomy_combine_style'] = 'or'
 
     return params
 
@@ -35,7 +40,7 @@ def check_input_format(data):
 
 
 def interpolate_over_nans(input_mat, t=None):
-    """ Function to interpolate over NaN values along the first dimension of a matrix
+    """Function to interpolate over NaN values along the first dimension of a matrix.
 
     Args:
         input_mat: numpy array, [time, neurons]
@@ -43,7 +48,6 @@ def interpolate_over_nans(input_mat, t=None):
 
     Returns: Interpolated input_mat, interpolated time
     """
-
     input_mat = check_input_format(input_mat)
 
     # if t is not specified, assume it has been sampled at regular intervals
@@ -51,7 +55,6 @@ def interpolate_over_nans(input_mat, t=None):
         t = np.arange(input_mat.shape[0])
 
     output_mat = np.zeros(input_mat.shape)
-    output_mat[:] = np.nan
 
     # calculate the average sample rate and uses this to create an interpolated t
     sample_rate = 1 / np.mean(np.diff(t, axis=0))
@@ -61,12 +64,11 @@ def interpolate_over_nans(input_mat, t=None):
     for c in range(input_mat.shape[1]):
         # check if all the data is nan and skip if it is
         if np.all(np.isnan(input_mat[:, c])):
-            # print('column ' + str(c) + ' is all NaN, skipping')
+            print('column ' + str(c) + ' is all NaN, skipping')
             continue
 
         # find the location of all nan values
         no_nan_ind = ~np.isnan(input_mat[:, c])
-
         # remove nans from t and the data
         no_nan_t = t[no_nan_ind]
         no_nan_data_mat = input_mat[no_nan_ind, c]
@@ -79,7 +81,7 @@ def interpolate_over_nans(input_mat, t=None):
 
 
 def photobleach_correction(time_by_neurons_full, t=None, num_exp=1, fit_offset=False):
-    """ Function to fit an exponential with a shared tau to all the columns of time_by_neurons
+    """Function to fit an exponential with a shared tau to all the columns of time_by_neurons.
 
     This function fits the function A*exp(-t / tau) to the matrix time_by_neurons. Tau is a single time constant shared
     between every column in time_by_neurons. A is an amplitude vector that is fit separately for each column. The
@@ -93,7 +95,6 @@ def photobleach_correction(time_by_neurons_full, t=None, num_exp=1, fit_offset=F
 
     Returns: time_by_neurons divided by the exponential
     """
-
     time_by_neurons_full = check_input_format(time_by_neurons_full)
     nan_neurons = np.all(np.isnan(time_by_neurons_full), axis=0)
     time_by_neurons = time_by_neurons_full.copy()
@@ -144,7 +145,7 @@ def photobleach_correction(time_by_neurons_full, t=None, num_exp=1, fit_offset=F
     def loss_fn(p):
         exponential_approx = get_exponential_approx(p)
 
-        squared_error = ((exponential_approx - time_by_neurons)**2)
+        squared_error = ((exponential_approx - time_by_neurons) ** 2)
         # set unmeasured values to 0, so they don't show up in the sum
         squared_error = squared_error * mask
         return squared_error.sum()
@@ -244,26 +245,39 @@ def preprocess_data(emissions, inputs, start_index=0, correct_photobleach=False,
 
 
 def load_data(data_path, num_data_sets=None, neuron_freq=0.0, held_out_data=[],
-              hold_out='worm', upsample_factor=1):
+              hold_out='worm', upsample_factor=1, hold_out_start=0.9, black_list=['AWCL', 'AWCR']):
     data_path = Path(data_path)
 
+    # we use preprocessed data files for quick loading
+    preprocess_filename = 'funcon_preprocessed_data.pkl'
     emissions_train = []
     inputs_train = []
     cell_ids_train = []
     path_name = []
     sample_rate = 2 * upsample_factor  # seconds per sample DEFAULT
 
-    # find each folde that has recording data
+    # find each folder that has recording data
     for i in sorted(data_path.rglob('funcon_preprocessed_data.pkl')):
         path_name.append(i.parts[-2])
 
-        data_file = open(i, 'rb')
+        # check if a processed version exists
+        preprocess_path = i.parent / preprocess_filename
+
+        data_file = open(preprocess_path, 'rb')
         preprocessed_data = pickle.load(data_file)
         data_file.close()
 
         this_emissions = preprocessed_data['emissions']
         this_inputs = preprocessed_data['inputs']
         this_cell_ids = preprocessed_data['cell_ids']
+
+        # remove any neurons on the blacklist
+        for bl in black_list:
+            idx = this_cell_ids.index(bl) if bl in this_cell_ids else -1
+            if idx != -1:
+                this_cell_ids.pop(idx)
+                this_emissions = np.delete(this_emissions, idx, axis=1)
+                this_inputs = np.delete(this_inputs, idx, axis=1)
 
         emissions_train.append(this_emissions)
         inputs_train.append(this_inputs)
@@ -281,17 +295,16 @@ def load_data(data_path, num_data_sets=None, neuron_freq=0.0, held_out_data=[],
                 inputs_test.append(inputs_train.pop(i))
                 cell_ids_test.append(cell_ids_train.pop(i))
 
-        emissions_test += emissions_train[num_data_sets:]
-        inputs_test += inputs_train[num_data_sets:]
-        cell_ids_test += cell_ids_train[num_data_sets:]
+        # hold out a chunk of worms, starting near the end to keep ordering consistent
+        num_test = len(emissions_train) - num_data_sets
+        num_test = np.min((num_test, num_data_sets))
+        start_ind = int(hold_out_start * len(emissions_train))
+        test_inds = np.mod(np.arange(start_ind, start_ind + num_test), len(emissions_train))
 
-        emissions_test = emissions_test[:num_data_sets]
-        inputs_test = inputs_test[:num_data_sets]
-        cell_ids_test = cell_ids_test[:num_data_sets]
-
-        emissions_train = emissions_train[:num_data_sets]
-        inputs_train = inputs_train[:num_data_sets]
-        cell_ids_train = cell_ids_train[:num_data_sets]
+        for ti in reversed(sorted(test_inds)):
+            emissions_test.append(emissions_train.pop(ti))
+            inputs_test.append(inputs_train.pop(ti))
+            cell_ids_test.append(cell_ids_train.pop(ti))
 
     elif hold_out == 'middle':
         frac = 0.3
@@ -354,6 +367,17 @@ def load_data(data_path, num_data_sets=None, neuron_freq=0.0, held_out_data=[],
     data_test['inputs'] = [i[:, neurons_to_keep] for i in data_test['inputs']]
     data_test['cell_ids'] = [data_test['cell_ids'][i] for i in range(len(data_test['cell_ids'])) if neurons_to_keep[i]]
     data_test['sample_rate'] = sample_rate
+
+    # save data splits for downstream scripts
+    train_save_path = data_path / 'data_train.pkl'
+    train_file = open(train_save_path, 'wb')
+    pickle.dump(data_train, train_file)
+    train_file.close()
+
+    test_save_path = data_path / 'data_test.pkl'
+    test_file = open(test_save_path, 'wb')
+    pickle.dump(data_test, test_file)
+    test_file.close()
 
     return data_train, data_test
 
@@ -419,7 +443,3 @@ def align_data_cell_ids(emissions, inputs, cell_ids, cell_ids_unique=None):
         inputs_aligned.append(this_inputs)
 
     return emissions_aligned, inputs_aligned, cell_ids_unique
-
-
-
-
