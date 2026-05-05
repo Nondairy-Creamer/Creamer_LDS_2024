@@ -267,6 +267,14 @@ def calculate_eirfs(model, rng=np.random.default_rng(), window=(15, 30), verbose
     return eirfs
 
 
+def calculate_stams(model, rng=np.random.default_rng(), window=(15, 30), verbose=False):
+    """Stimulus Triggered Average Maps: time-integrated full-model IRFs."""
+    irfs = calculate_irfs(model, rng=rng, window=window, verbose=verbose)
+    irms = np.sum(irfs[window[0]:, :, :], axis=0) / model.sample_rate
+
+    return irms
+
+
 def calculate_eirms(model, rng=np.random.default_rng(), window=(15, 30), verbose=False):
     eirfs = calculate_eirfs(model, rng=rng, window=window, verbose=verbose)
     eirms = np.sum(eirfs[window[0]:, :, :], axis=0) / model.sample_rate

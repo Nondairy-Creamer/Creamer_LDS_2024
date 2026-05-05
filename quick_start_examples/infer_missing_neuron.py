@@ -1,6 +1,9 @@
+import os
 import pickle
 import numpy as np
 from matplotlib import pyplot as plt
+
+from _paths import MODELS_DIR, DATA_DIR
 
 # this file will take a recording of whole-brain activity from a worm and mask the activity
 # of the neuron AVER. Then we will use the model and kalman smoothing to predict AVER's activity from the activity
@@ -12,9 +15,8 @@ chosen_neuron = 'AVER'
 sister_neuron = 'AVEL'
 
 # load in an example neural recording
-data_file = open('data/example_recording.pkl', 'rb')
-recording = pickle.load(data_file)
-data_file.close()
+with open(os.path.join(DATA_DIR, 'example_recording.pkl'), 'rb') as data_file:
+    recording = pickle.load(data_file)
 
 cell_ids = recording['cell_ids']
 chosen_neuron_ind = cell_ids.index(chosen_neuron)
@@ -22,14 +24,12 @@ sister_neuron_ind = cell_ids.index(sister_neuron)
 
 # load in the initial conditions of the data as inferred by the model
 # these shouldn't matter much as they are only a single time point
-init_file = open('data/initial_conditions.pkl', 'rb')
-intial_conditions = pickle.load(init_file)
-init_file.close()
+with open(os.path.join(DATA_DIR, 'initial_conditions.pkl'), 'rb') as init_file:
+    intial_conditions = pickle.load(init_file)
 
 # load in the trained connectome_constrained model
-model_file = open('models/connectome_constrained.pkl', 'rb')
-model = pickle.load(model_file)
-model_file.close()
+with open(os.path.join(MODELS_DIR, 'connectome_constrained.pkl'), 'rb') as model_file:
+    model = pickle.load(model_file)
 
 # get the activity of AVER
 activity_true = recording['activity'][:, chosen_neuron_ind].copy()

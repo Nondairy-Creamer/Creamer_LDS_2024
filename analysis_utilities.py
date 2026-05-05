@@ -4,7 +4,6 @@ from pathlib import Path
 import metrics as met
 import itertools
 import csv
-import torch
 from scipy import optimize
 
 
@@ -382,8 +381,15 @@ def single_sample_boostrap_p(data, metric=np.mean, n_boot=10000, rng=np.random.d
     return p
 
 
-def scipy_minimize_with_grad(loss_fn_torch, variables_np, optimizer='BFGS', device='cpu', dtype=torch.float64):
-    """Minimize a torch loss using scipy with provided gradients."""
+def scipy_minimize_with_grad(loss_fn_torch, variables_np, optimizer='BFGS', device='cpu', dtype=None):
+    """Minimize a torch loss using scipy with provided gradients.
+
+    torch is imported lazily so the rest of the codebase doesn't require it.
+    """
+    import torch
+
+    if dtype is None:
+        dtype = torch.float64
 
     def loss_fn_np(variables_np_in):
         training_variables = torch.tensor(variables_np_in, device=device, dtype=dtype)

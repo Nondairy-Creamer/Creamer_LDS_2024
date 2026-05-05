@@ -1,4 +1,8 @@
+import os
 import pickle
+
+from _paths import MODELS_DIR, DATA_DIR  # noqa: F401  (must come before project imports)
+
 import lgssm_utilities as ssmu
 import metrics as met
 import numpy as np
@@ -8,32 +12,29 @@ from matplotlib import pyplot as plt
 # and compare these measured values with the predictions of the three models
 # highlighted in Fig 3
 
-model_names = ['connectome_constrained', 'unconstrained', 'shuffled_constrained']
+model_names = ['connectome_constrained', 'fully_connected', 'shuffled_constrained']
 # time in seconds to calculate a stimulus triggered average [before, after]
 window = [15, 30]
 plot_color = {'connectome_constrained': np.array([27, 158, 119]) / 255,
-              'unconstrained': np.array([117, 112, 179]) / 255,
+              'fully_connected': np.array([117, 112, 179]) / 255,
               'shuffled_constrained': np.array([128, 128, 128]) / 255,
               }
 
 # load in the trained models from the paper
 models = {}
 for mn in model_names:
-    model_file = open('models/' + mn + '.pkl', 'rb')
-    models[mn] = pickle.load(model_file)
-    model_file.close()
+    with open(os.path.join(MODELS_DIR, mn + '.pkl'), 'rb') as model_file:
+        models[mn] = pickle.load(model_file)
 
 # load in the measured STAMs and correlation coefficents between each pair of neurons
 # these were calculated from 30 held-out recordings from the Randi et al 2023 data set
 
 measured_metric = {}
-stams_file = open('data/measured_stams.pkl', 'rb')
-measured_metric['stams'] = pickle.load(stams_file)
-stams_file.close()
+with open(os.path.join(DATA_DIR, 'measured_stams.pkl'), 'rb') as stams_file:
+    measured_metric['stams'] = pickle.load(stams_file)
 
-corr_file = open('data/measured_corr.pkl', 'rb')
-measured_metric['corr'] = pickle.load(corr_file)
-corr_file.close()
+with open(os.path.join(DATA_DIR, 'measured_corr.pkl'), 'rb') as corr_file:
+    measured_metric['corr'] = pickle.load(corr_file)
 
 # mask out the diagonals to only evaluate on neuron-to-neuron interactions
 num_neurons = measured_metric['stams']['train'].shape[0]

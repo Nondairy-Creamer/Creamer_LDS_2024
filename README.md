@@ -17,7 +17,7 @@ All requirements are listed in the setup.py file if you want to install them man
 ## Usage
 The files in the quick_start_examples folder will show you how to load the models from the paper and use the models to predict STAMs, correlations, and reconstruct missing neurons.
 
-If you would like to train a model on synthetic data, simply run main.txt. To see the available parameters for fitting and generating synethic data look at submission_params/syn_test.txt
+If you would like to train a model on synthetic data, simply run ```main.py```. To see the available parameters for fitting and generating synethic data look at submission_params/syn_test.txt
 
 main.txt is there to determine whether to submit to a cluster or on the local machine. To see how the models are actually trained look at the ```fit_synthetic``` function in ```run_inference.py```
 
@@ -51,6 +51,16 @@ param_props is a dictionary with properties of the parameters
 `shape`: any special shape parameters such as diagonal
 
 `update`: whether or not to update this parameter during learning
+
+### Connectome data
+Connectome data was downloaded from [NemaNode](https://nemanode.org/) on November 1st, 2025. The following data sets are used and combined when constructing the connectome constraint:
+
+- `white_1986_jsh.csv`
+- `white_1986_n2u.csv`
+- `witvliet_2020_7.csv`
+- `witvliet_2020_8.csv`
+
+These files live in `anatomical_data/worm_connectomes/` and are loaded by `load_anatomical_data` in `analysis_utilities.py`.
 
 ### Fitting experimental data
 To fit a new model on the data from Randi et al 2023

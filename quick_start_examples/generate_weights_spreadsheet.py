@@ -1,13 +1,12 @@
-import numpy as np
+import os
 import pickle
 import csv
 
+from _paths import EXAMPLES_DIR, MODELS_DIR
 
-# load in the trained models from the paper
-models = {}
-model_file = open('models/connectome_constrained.pkl', 'rb')
-model = pickle.load(model_file)
-model_file.close()
+# load in the trained model from the paper
+with open(os.path.join(MODELS_DIR, 'connectome_constrained.pkl'), 'rb') as model_file:
+    model = pickle.load(model_file)
 
 cell_ids = model.cell_ids.copy()
 num_neurons = len(cell_ids)
@@ -24,7 +23,7 @@ for i in range(num_neurons):
         if weights_mask[j, i]:
             csv_output.append([cell_ids[i], cell_ids[j], f"{weights[j, i]:.6f}"])
 
-with open('model_weights.csv', 'w', newline='') as f:
+with open(os.path.join(EXAMPLES_DIR, 'model_weights.csv'), 'w', newline='') as f:
     writer = csv.writer(f)
     writer.writerows(csv_output)
 
