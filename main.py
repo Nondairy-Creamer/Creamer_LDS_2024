@@ -46,16 +46,16 @@ def main(param_name, folder_name=None, extra_train_steps=None, prune_frac=None):
         if cpu_id == 0:
             # these commands need to end with a " to complement the leading " in the run command
             if run_type == 'new':
-                fit_model_command = 'run_inference.' + run_params['fit_file'] + '(\'' + str(param_name) + '\',\'' + str(save_folder) + '\')\"'
+                fit_model_command = 'run_inference.' + run_params['fit_file'] + '(\'' + str(param_name) + '\',\'' + str(save_folder) + '\')'
             elif run_type == 'post':
                 fit_model_command = 'run_inference.infer_posterior(\'' + str(param_name) + '\',\'' + str(save_folder) + \
-                                    '\', infer_missing=True)\"'
+                                    '\', infer_missing=True)'
             elif run_type == 'cont':
                 fit_model_command = 'run_inference.continue_fit(\'' + str(param_name) + '\',\'' + str(save_folder) + \
-                                    '\',' + str(extra_train_steps) + ')\"'
+                                    '\',' + str(extra_train_steps) + ')'
             elif run_type == 'prune':
                 fit_model_command = 'run_inference.prune_model(\'' + str(param_name) + '\',\'' + str(save_folder) + \
-                                    '\',' + str(extra_train_steps) + ',' + str(prune_frac) + ')\"'
+                                    '\',' + str(extra_train_steps) + ',' + str(prune_frac) + ')'
                 run_type_append = '_es' + f'{int(extra_train_steps):03d}' + '_pf' + f'{int(prune_frac * 100):03d}'
             else:
                 raise Exception('run type not recognized')
@@ -66,17 +66,16 @@ def main(param_name, folder_name=None, extra_train_steps=None, prune_frac=None):
             slurm_fit = Slurm(**run_params['slurm'], output=slurm_output_path, job_name=job_name)
             cpus_per_task = run_params['slurm']['cpus_per_task']
 
-            run_command = ['module purge',
-                           'module load anaconda3/2022.10',
-                           'module load openmpi/gcc/4.1.2',
-                           'conda activate fast-mpi4py',
-                           'export MKL_NUM_THREADS=' + str(cpus_per_task),
-                           'export OPENBLAS_NUM_THREADS=' + str(cpus_per_task),
-                           'export OMP_NUM_THREADS=' + str(cpus_per_task),
-                           'srun python -uc \"import run_inference; ' + fit_model_command,
-                           ]
+            slurm_fit.add_cmd('module purge')
+            slurm_fit.add_cmd('module load anaconda3/2024.10')
+            slurm_fit.add_cmd('module load openmpi/gcc/4.1.6')
+            slurm_fit.add_cmd('conda activate fast-mpi4py')
+            slurm_fit.add_cmd(f'export MKL_NUM_THREADS={cpus_per_task}')
+            slurm_fit.add_cmd(f'export OPENBLAS_NUM_THREADS={cpus_per_task}')
+            slurm_fit.add_cmd(f'export OMP_NUM_THREADS={cpus_per_task}')
+            slurm_fit.add_cmd(f'srun python -uc "import run_inference; {fit_model_command}"')
 
-            slurm_fit.sbatch('\n'.join(run_command))
+            slurm_fit.sbatch()
 
     else:
         if run_type == 'new':
@@ -101,8 +100,8 @@ if __name__ == '__main__':
     num_args = len(sys.argv)
 
     if num_args == 1:
-        param_name = 'submission_params/syn_test.yml'
-        # param_name = 'submission_params/exp_test.yml'
+        # param_name = 'submission_params/syn_test.yml'
+        param_name = 'submission_params/exp_test.yml'
         folder_name = None
         extra_train_steps = None
         prune_frac = None
