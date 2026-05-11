@@ -14,13 +14,11 @@ Set up your python environment with pip. Within that environment run
 
 All requirements are listed in the setup.py file if you want to install them manually.
 
-The base install only includes what is needed to load the trained models and run the quick-start examples. If you want to fit models in parallel using MPI or submit to a SLURM cluster, install the corresponding extras:
+`mpi4py` is one of the requirements and needs a working MPI runtime on your system before `pip install` will succeed. Install one first if you don't already have it:
 
-```pip install -e .[mpi]```          (requires a working MPI runtime such as OpenMPI or MPICH)
-
-```pip install -e .[slurm]```        (adds the `simple-slurm` cluster dispatcher)
-
-```pip install -e .[mpi,slurm]```    (both)
+- macOS: ```brew install open-mpi```
+- Ubuntu / Debian: ```sudo apt install libopenmpi-dev openmpi-bin```
+- Windows: install [Microsoft MPI](https://learn.microsoft.com/en-us/message-passing-interface/microsoft-mpi) (both the SDK and the runtime)
 
 ## Usage
 The files in the `quick_start_examples` folder will show you how to load the models from the paper and use the models to predict STAMs, correlations, and reconstruct missing neurons.
