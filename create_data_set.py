@@ -8,6 +8,7 @@ import scipy.signal as ssig
 
 run_params = lu.get_run_params(param_name='submission_params/create_data_set.yml')
 data_path = Path(run_params['data_path'])
+save_path = Path(run_params['save_path'])
 start_index = run_params['start_index']
 filter_size = run_params['filter_size']
 correct_photobleach = run_params['correct_photobleach']
@@ -35,11 +36,10 @@ for i in sorted(data_path.rglob('francesco_green.npy'))[::-1]:
     this_stim_volume_inds = np.load(str(i.parent / 'stim_volumes_inds.npy'), allow_pickle=True)
 
 
-    save_dest = Path('/home/mcreamer/Documents/data_sets/osf_upload')
-    save_folder = save_dest / i.parts[-2]
+    save_folder = save_path / i.parts[-2]
 
     if not save_folder.exists():
-        save_folder.mkdir()
+        save_folder.mkdir(parents=True)
 
     np.savetxt(save_folder / 'neural_data.txt', this_emissions, delimiter=',')
     np.savetxt(save_folder / 'nan_mask.txt', this_nan_mask, fmt='%i', delimiter=',')

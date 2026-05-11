@@ -255,7 +255,6 @@ class Lgssm:
         dynamics_inputs = (self.dynamics_input_weights @ dynamics_inputs[:, :, None])[:, :, 0]
         emissions_inputs = (self.emissions_input_weights @ emissions_inputs[:, :, None])[:, :, 0]
 
-        # TODO need to figure out if I need to change in this in the EM steps to expect inputs in the first latent
         latents[0, :] = rng.multivariate_normal(init_mean, add_noise * init_cov) + dynamics_inputs[0, :]
 
         emissions[0, :] = self.emissions_weights @ latents[0, :] + \
@@ -461,8 +460,7 @@ class Lgssm:
             smoothed_means[t, :] = filtered_mean + G @ (smoothed_mean_next - pred_mean)
 
             # Compute the smoothed expectation of x_t x_{t+1}^T
-            # TODO: ask why the second expression is not in jonathan's code
-            smoothed_crosses_sum += G @ smoothed_cov_next #+ smoothed_means[:, t, :, None] * smoothed_mean_next[:, None, :]
+            smoothed_crosses_sum += G @ smoothed_cov_next
 
             # now calculate the correction for my and mzy
             y_nan_loc_t = np.isnan(emissions[t, :])
@@ -642,7 +640,6 @@ class Lgssm:
                 self.dynamics_weights = np.concatenate((self.dynamics_weights, dynamics_pad), axis=0)  # new A
 
             elif self.param_props['update']['dynamics_input_weights']:  # update input matrix B only
-                # TODO: I think this is broken right now if there are variables that were never stimulated
                 mask = self.param_props['mask']['dynamics_input_weights'].T
                 self.dynamics_input_weights = iu.solve_masked(Mu1.T, (Muz2 - Muz21 @ self.dynamics_weights.T)[:, :self.dynamics_dim], mask).T  # new A and B from regression
                 self.dynamics_input_weights = np.concatenate((self.dynamics_input_weights, dynamics_inputs_zeros_pad), axis=0)  # new B

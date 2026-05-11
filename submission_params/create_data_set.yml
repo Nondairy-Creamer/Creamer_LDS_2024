@@ -1,6 +1,10 @@
 fit_file: fit_experimental
 
+# folder containing the raw recordings (output of the Randi et al. 2023 preprocessing pipeline)
 data_path: <path_to_data>
+
+# folder where preprocessed per-recording subfolders will be written
+save_path: <path_to_save_destination>
 
 # the calcium dynamics always look strange at the start of a recording, possibly due to the laser being turned on
 # cut out the first minute to let the system equilibrate

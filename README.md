@@ -12,10 +12,18 @@ Set up your python environment with pip. Within that environment run
 
 ```pip install -e .```
 
-All requirements are listed in the setup.py file if you want to install them manually
+All requirements are listed in the setup.py file if you want to install them manually.
+
+The base install only includes what is needed to load the trained models and run the quick-start examples. If you want to fit models in parallel using MPI or submit to a SLURM cluster, install the corresponding extras:
+
+```pip install -e .[mpi]```          (requires a working MPI runtime such as OpenMPI or MPICH)
+
+```pip install -e .[slurm]```        (adds the `simple-slurm` cluster dispatcher)
+
+```pip install -e .[mpi,slurm]```    (both)
 
 ## Usage
-The files in the quick_start_examples folder will show you how to load the models from the paper and use the models to predict STAMs, correlations, and reconstruct missing neurons.
+The files in the `quick_start_examples` folder will show you how to load the models from the paper and use the models to predict STAMs, correlations, and reconstruct missing neurons.
 
 If you would like to train a model on synthetic data, simply run ```main.py```. To see the available parameters for fitting and generating synethic data look at submission_params/syn_test.yml
 
