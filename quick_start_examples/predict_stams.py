@@ -100,4 +100,3 @@ for type in ['stams', 'corr']:
     plt.tight_layout()
 
 plt.show()
-a=1

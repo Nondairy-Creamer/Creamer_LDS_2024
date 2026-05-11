@@ -19,7 +19,7 @@ The files in the quick_start_examples folder will show you how to load the model
 
 If you would like to train a model on synthetic data, simply run ```main.py```. To see the available parameters for fitting and generating synethic data look at submission_params/syn_test.yml
 
-main.txt is there to determine whether to submit to a cluster or on the local machine. To see how the models are actually trained look at the ```fit_synthetic``` function in ```run_inference.py```
+`main.py` decides whether to submit to a cluster or run on the local machine. To see how the models are actually trained look at the ```fit_synthetic``` function in ```run_inference.py```
 
 ### Model files
 You can see how to load the models in `quick_start_examples/predict_stams.py`
@@ -80,17 +80,16 @@ To fit a model run
 
 ```python main.py submission_params/exp_test.yml```
 
-Takes ~40 hours on a desktop to fit across 80 animals and 156 neurons .
+Takes ~40 hours on a desktop to fit across 80 animals and 154 neurons.
 
-If you want to run with debugging, change line 104 in main.py from
+If you want to run from your IDE without passing arguments, open `main.py` and edit the `param_name` assignment in the `if num_args == 1:` block (around line 104) so the active line points at the yml you want, e.g.:
 
-```param_name = 'submission_params/syn_test.yml'```
+```python
+param_name = 'submission_params/exp_test.yml'
+# param_name = 'submission_params/syn_test.yml'
+```
 
-to
-
-```param_name = 'submission_params/exp_test.yml'```
-
-and run main.py in you preferred IDE
+Then run `main.py` in your preferred IDE.
 
 ### Fitting locally parallelized across CPUs (est time ~10 hours parallelized across 10 CPUs)
 If you computer has multiple CPUs you can reduce computation time using mpi4py

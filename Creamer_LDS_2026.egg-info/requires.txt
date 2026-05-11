@@ -1,6 +1,0 @@
-numpy
-matplotlib
-scipy
-mpi4py
-PyYAML
-simple-slurm
