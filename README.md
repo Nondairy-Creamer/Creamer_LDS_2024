@@ -17,7 +17,7 @@ All requirements are listed in the setup.py file if you want to install them man
 ## Usage
 The files in the quick_start_examples folder will show you how to load the models from the paper and use the models to predict STAMs, correlations, and reconstruct missing neurons.
 
-If you would like to train a model on synthetic data, simply run ```main.py```. To see the available parameters for fitting and generating synethic data look at submission_params/syn_test.txt
+If you would like to train a model on synthetic data, simply run ```main.py```. To see the available parameters for fitting and generating synethic data look at submission_params/syn_test.yml
 
 main.txt is there to determine whether to submit to a cluster or on the local machine. To see how the models are actually trained look at the ```fit_synthetic``` function in ```run_inference.py```
 
@@ -106,9 +106,9 @@ On Linux, to fit a model run
 ```mpiexec -n <num_cpus> python -m mpi4py main.py submission_params/exp_test.yml```
 
 ### Fit a model on an HPC cluster using SLURM (est time ~4 hours)
-Examine submissions_params/slurm_example.yml. Every entry in the slurm dict will be fed direclty to slurm. You can add / remove necessary commands as necessary
+Examine submission_params/slurm_example.yml. Every entry in the slurm dict will be fed direclty to slurm. You can add / remove necessary commands as necessary
 
 Note that this will depend on the exact specifications of your HPC cluster. You should be aware what size your nodes are to properly set 'cpus_per_task', 'tasks_per_node', and 'nodes'. Check main.py in the section after ```if 'slurm' in run_params.keys()``` to see how these are submitted.
 
 Install the code according to instructions from the HPC specifications. Then run
-```python main.py submission_params/slurm_script.yml```
+```python main.py submission_params/slurm_example.yml```
